@@ -59,14 +59,3 @@ runs:
         openvpn3 config-acl --show --lock-down true --grant root --config GitHubVPN
         sudo systemctl enable --now openvpn3-session@GitHubVPN.service
       shell: bash
-
-    - name: VPN Status
-      id: vpn_status
-      env:
-        PING_URL: ${{ inputs.PING_URL }}
-      run: |
-        if ping -c 2 $PING_URL > /dev/null 2>&1; then
-          echo "vpn-status=true" >> $GITHUB_OUTPUT
-        else
-          echo "vpn-status=false" >> $GITHUB_OUTPUT
-      shell: bash
