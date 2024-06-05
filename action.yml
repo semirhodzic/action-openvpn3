@@ -45,7 +45,7 @@ runs:
         USER_CRT: ${{ env.USER_CRT }}
         USER_KEY: ${{ env.USER_KEY }}
       run: |
-        CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
+        export CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
         echo "$TLS_KEY" | base64 -d > "$CONFIG_DIRECTORY/tls.key"
         echo "$CA_CRT" | base64 -d > "$CONFIG_DIRECTORY/ca.crt"
         echo "$USER_CRT" | base64 -d > "$CONFIG_DIRECTORY/user.crt"
@@ -54,7 +54,7 @@ runs:
 
     - name: Connect to VPN
       run: |
-        CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
+        export CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
         openvpn3 config-import --config $CONFIG_DIRECTORY/config.ovpn --name GitHubVPN
         openvpn3 config-acl --show --lock-down true --grant root --config GitHubVPN
         sudo systemctl enable --now openvpn3-session@GitHubVPN.service
