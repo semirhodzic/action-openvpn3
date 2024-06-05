@@ -55,8 +55,7 @@ runs:
     - name: Connect to VPN
       run: |
         CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
-        openvpn3 config-import --config $CONFIG_DIRECTORY/config.ovpn --name GitHubVPN
-        openvpn3 acl-set --show --lock-down true --grant root --config GitHubVPN
+        sudo openvpn3 config-import --config $CONFIG_DIRECTORY/config.ovpn --name GitHubVPN
         sudo systemctl enable --now openvpn3-session@GitHubVPN.service
       shell: bash
 
