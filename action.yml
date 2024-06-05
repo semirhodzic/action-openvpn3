@@ -46,7 +46,7 @@ runs:
         USER_KEY: ${{ env.USER_KEY }}
       run: |
         CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
-        echo "$TLS_KEY" | base64 -d > "$CONFIG_DIRECTORY/vpn/tls.key"
+        echo "$TLS_KEY" | base64 -d > "$CONFIG_DIRECTORY/tls.key"
         echo "$CA_CRT" | base64 -d > "$CONFIG_DIRECTORY/ca.crt"
         echo "$USER_CRT" | base64 -d > "$CONFIG_DIRECTORY/user.crt"
         echo "$USER_KEY" | base64 -d > "$CONFIG_DIRECTORY/user.key"
