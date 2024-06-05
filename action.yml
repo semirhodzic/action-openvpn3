@@ -1,0 +1,73 @@
+name: 'Connect OpenVPN3 Action'
+description: 'Action to connect to a VPN via OpenVPN3 packages'
+branding:
+  icon: 'shield'
+  color: 'orange'
+inputs:
+  SECRET:
+    description: 'Username and password for VPN access.'
+    required: false
+    default: ''
+  TLS_KEY:
+    description: 'User key for VPN access.'
+    required: false
+    default: ''
+  PING_URL:
+    description: 'URL to check for connection success or failure.'
+    required: true
+    default: '127.0.0.1'
+  FILE_OVPN:
+    description: 'File location for OpenVPN configuration.'
+    required: true
+    default: './config.ovpn'
+outputs:
+  STATUS:
+    description: 'Status to check VPN connection.'
+    value: ${{ steps.vpn_status.outputs.vpn-status }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Install OpenVPN 3
+      id: vpn-setup
+      run: |
+        export DISTRO=$(lsb_release --codename | cut -f2)
+        sudo apt-get install -y apt-transport-https
+        sudo wget https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub
+        sudo apt-key add openvpn-repo-pkg-key.pub
+        sudo wget -O /etc/apt/sources.list.d/openvpn3.list https://swupdate.openvpn.net/community/openvpn3/repos/openvpn3-$DISTRO.list
+        sudo apt-get update -y && sudo apt-get install -y openvpn3
+      shell: bash
+
+    - name: Setup VPN Credentials
+      env:
+        TLS_KEY: ${{ inputs.TLS_KEY }}
+        CA_CRT: ${{ env.CA_CRT }}
+        USER_CRT: ${{ env.USER_CRT }}
+        USER_KEY: ${{ env.USER_KEY }}
+      run: |
+        CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
+        echo "$TLS_KEY" | base64 -d > "$CONFIG_DIRECTORY/vpn/tls.key"
+        echo "$CA_CRT" | base64 -d > "$CONFIG_DIRECTORY/ca.crt"
+        echo "$USER_CRT" | base64 -d > "$CONFIG_DIRECTORY/user.crt"
+        echo "$USER_KEY" | base64 -d > "$CONFIG_DIRECTORY/user.key"
+      shell: bash
+
+    - name: Connect to VPN
+      run: |
+        CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
+        openvpn3 config-import --config $CONFIG_DIRECTORY/config.ovpn --name GitHubVPN
+        openvpn3 acl-set --show --lock-down true --grant root --config GitHubVPN
+        sudo systemctl enable --now openvpn3-session@GitHubVPN.service
+      shell: bash
+
+    - name: VPN Status
+      id: vpn_status
+      env:
+        PING_URL: ${{ inputs.PING_URL }}
+      run: |
+        sleep 5
+        if ping -c 2 $PING_URL > /dev/null 2>&1; then
+          echo "vpn-status=true" >> $GITHUB_OUTPUT
+        else
+          echo "vpn-status=false" >> $GITHUB_OUTPUT
+      shell: bash
