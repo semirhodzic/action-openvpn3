@@ -4,29 +4,18 @@ branding:
   icon: 'shield'
   color: 'orange'
 inputs:
-  SECRET:
-    description: 'Username and password for VPN access.'
-    required: false
-    default: ''
   TLS_KEY:
     description: 'User key for VPN access.'
     required: false
     default: ''
-  PING_URL:
-    description: 'URL to check for connection success or failure.'
-    required: true
-    default: '127.0.0.1'
   FILE_OVPN:
     description: 'File location for OpenVPN configuration.'
     required: true
     default: './config.ovpn'
-outputs:
-  STATUS:
-    description: 'Status to check VPN connection.'
-    value: ${{ steps.vpn_status.outputs.vpn-status }}
 runs:
   using: 'composite'
   steps:
+  
     - name: Install OpenVPN 3
       id: vpn-setup
       run: |
@@ -37,7 +26,7 @@ runs:
         sudo wget -O /etc/apt/sources.list.d/openvpn3.list https://swupdate.openvpn.net/community/openvpn3/repos/openvpn3-$DISTRO.list
         sudo apt-get update -y && sudo apt-get install -y openvpn3
       shell: bash
-
+      
     - name: Setup VPN Credentials
       env:
         TLS_KEY: ${{ inputs.TLS_KEY }}
@@ -54,8 +43,7 @@ runs:
 
     - name: Connect to VPN
       run: |
-        export CONFIG_DIRECTORY=$(dirname ${{ inputs.FILE_OVPN }})
-        openvpn3 config-import --config $CONFIG_DIRECTORY/config.ovpn --name GitHubVPN
+        openvpn3 config-import --config ${{ inputs.FILE_OVPN }} --name GitHubVPN
         openvpn3 config-acl --show --lock-down true --grant root --config GitHubVPN
         sudo systemctl enable --now openvpn3-session@GitHubVPN.service
       shell: bash
